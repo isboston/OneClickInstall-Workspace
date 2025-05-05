@@ -2,6 +2,9 @@ name: >
   Installation test OneClickInstall-Workspace
 
 on:
+  push:
+    branches:
+      - feature/rhel9
   pull_request:
     types: [opened, reopened, synchronize]
     paths-ignore:
