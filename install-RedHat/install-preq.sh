@@ -59,6 +59,11 @@ if ! [[ "$REV" =~ ^[0-9]+$ ]]; then
 	REV=${REV_PARTS[0]};
 fi
 
+if [ "$DIST" = "redhat" ]; then 
+	LADSPA_PACKAGE_VERSION=$(curl -s "${EPEL_URL}/10/Everything/x86_64/Packages/l/" | grep -oP 'ladspa-[0-9].*?\.rpm' | sort -V | tail -n 1)
+	${package_manager} install -y "${EPEL_URL}/10/Everything/x86_64/Packages/l/${LADSPA_PACKAGE_VERSION}"
+fi
+
 #Add EPEL and RPMFusion repository 
 yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-$REV.noarch.rpm || true
 yum install -y https://download1.rpmfusion.org/free/el/rpmfusion-free-release-$REV.noarch.rpm || true
