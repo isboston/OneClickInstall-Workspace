@@ -114,6 +114,32 @@ function check_hw() {
 
 
 #############################################################################################
+# Add nexus repositories for test packages for .deb and .rpm packages 
+# Globals:     None
+# Arguments:   None
+# Outputs:     None
+#############################################################################################
+function add-repo-deb() {
+  mkdir -p "$HOME"/.gnupg && chmod 700 "$HOME"/.gnupg
+  echo "deb [signed-by=/usr/share/keyrings/onlyoffice.gpg] https://nexus.onlyoffice.com/repository/4testing-debian stable main" | \
+  sudo tee /etc/apt/sources.list.d/onlyoffice4testing.list
+  curl -fsSL https://download.onlyoffice.com/GPG-KEY-ONLYOFFICE | \
+  gpg --no-default-keyring --keyring gnupg-ring:/usr/share/keyrings/onlyoffice.gpg --import
+  chmod 644 /usr/share/keyrings/onlyoffice.gpg
+}
+
+function add-repo-rpm() {
+  cat > /etc/yum.repos.d/onlyoffice4testing.repo <<END
+[onlyoffice4testing]
+name=onlyoffice4testing repo
+baseurl=https://nexus.onlyoffice.com/repository/centos-testing/4testing/main/noarch
+gpgcheck=1
+enabled=1
+gpgkey=https://download.onlyoffice.com/GPG-KEY-ONLYOFFICE
+END
+}
+
+#############################################################################################
 # Prepare vagrant boxes like: set hostname/remove postfix for DEB distributions
 # Globals:
 #   None
