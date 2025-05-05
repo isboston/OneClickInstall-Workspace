@@ -123,57 +123,33 @@ function check_hw() {
 #   ☑ PREPAVE_VM: **<prepare_message>**
 #############################################################################################
 function prepare_vm() {
+  if [ -f /etc/os-release ]; then
+    source /etc/os-release
+    case $ID in
+      ubuntu)
+          [[ "${TEST_REPO_ENABLE}" == 'true' ]] && add-repo-deb
+          ;;
 
-  if [ -f /etc/lsb-release ] ; then
-        DIST=$(grep '^DISTRIB_ID' /etc/lsb-release | awk -F=  '{ print $2 }')
-        REV=$(grep '^DISTRIB_RELEASE' /etc/lsb-release | awk -F=  '{ print $2 }')
-        DISTRIB_CODENAME=$(grep '^DISTRIB_CODENAME' /etc/lsb-release | awk -F=  '{ print $2 }')
-        DISTRIB_RELEASE=$(grep '^DISTRIB_RELEASE' /etc/lsb-release | awk -F=  '{ print $2 }')
-  elif [ -f /etc/lsb_release ] || [ -f /usr/bin/lsb_release ] ; then
-        DIST=$(lsb_release -is)
-        REV=$(lsb_release -rs)
-        DISTRIB_CODENAME=$(lsb_release -cs)
-        DISTRIB_RELEASE=$(lsb_release -rs)
-  elif [ -f /etc/os-release ] ; then
-        DISTRIB_CODENAME=$(grep "VERSION=" /etc/os-release | awk -F= '{ print $2 }' | sed s/\"//g | sed s/[0-9]//g | sed s/\)$//g | sed s/\(//g | tr -d '[:space:]')
-        DISTRIB_RELEASE=$(grep "VERSION_ID=" /etc/os-release | awk -F= '{ print $2 }' | sed s/\"//g)
-  fi
+      debian)
+          [ "$VERSION_CODENAME" == "bookworm" ] && apt-get update -y && apt install -y curl gnupg
+          apt-get remove postfix -y && echo "${COLOR_GREEN}[OK] PREPARE_VM: Postfix was removed${COLOR_RESET}"
+          [[ "${TEST_REPO_ENABLE}" == 'true' ]] && add-repo-deb
+          ;;
 
-  DIST=$(echo "$DIST" | tr '[:upper:]' '[:lower:]' | xargs)
-  DISTRIB_CODENAME=$(echo "$DISTRIB_CODENAME" | tr '[:upper:]' '[:lower:]' | xargs)
-  REV=$(echo "$REV" | xargs)
+      fedora)
+          [[ "${TEST_REPO_ENABLE}" == 'true' ]] && add-repo-rpm
+          ;;
 
-    if [ ! -f /etc/centos-release ]; then
-	if [ "${DIST}" = "debian" ]; then
-	     if [ "${DISTRIB_CODENAME}" == "bookworm" ]; then
-		     apt-get update -y
-		     apt install -y curl gnupg
-        fi
-        if systemctl is-active --quiet postfix; then
-            systemctl stop postfix
-	        systemctl disable postfix
-	        apt-get remove postfix -y
-            echo "${COLOR_GREEN}☑ PREPARE_VM: Postfix was removed${COLOR_RESET}"
-	    fi
-    fi
+      centos)
+          [ "$VERSION_ID" == "8" ] && sed -i 's|^mirrorlist=|#&|; s|^#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|' /etc/yum.repos.d/CentOS-*
+          [[ "${TEST_REPO_ENABLE}" == 'true' ]] && add-repo-rpm
+          yum -y install centos*-release 
+          ;;
 
-	if [ "${TEST_REPO_ENABLE}" == 'true' ]; then
-   	   mkdir -p -m 700 $HOME/.gnupg
-  	   echo "deb [signed-by=/usr/share/keyrings/onlyoffice.gpg] http://static.teamlab.info.s3.amazonaws.com/repo/4testing/debian stable main" | tee /etc/apt/sources.list.d/onlyoffice4testing.list
-  	   curl -fsSL https://download.onlyoffice.com/GPG-KEY-ONLYOFFICE | gpg --no-default-keyring --keyring gnupg-ring:/usr/share/keyrings/onlyoffice.gpg --import
-  	   chmod 644 /usr/share/keyrings/onlyoffice.gpg
-	fi
-  fi
-
-  if [ -f /etc/centos-release ] || grep -qi "Red Hat" /etc/redhat-release; then
-	  local REV_MAJOR=$(cat /etc/redhat-release | sed 's/[^0-9.]*//g' | cut -d. -f1)
-
-      if [[ "$REV_MAJOR" == "9" ]]; then
-          update-crypto-policies --set LEGACY
-          echo "${COLOR_GREEN}☑ PREPARE_VM: sha1 gpg key check enabled for RHEL/CentOS 9${COLOR_RESET}"
-
-          if grep -qi "Red Hat" /etc/redhat-release; then
-            cat <<EOF | sudo tee /etc/yum.repos.d/centos-stream-9.repo
+      rhel)
+          local REV=$(sed -E 's/[^0-9]+([0-9]+).*/\1/' /etc/redhat-release)
+          if [ "${REV}" == "9" ]; then
+              cat <<EOF | sudo tee /etc/yum.repos.d/centos-stream-9.repo
 [centos9s-baseos]
 name=CentOS Stream 9 - BaseOS
 baseurl=http://mirror.stream.centos.org/9-stream/BaseOS/x86_64/os/
@@ -188,34 +164,24 @@ gpgcheck=0
 EOF
           fi
 
-      elif [[ "$REV_MAJOR" == "8" || "$REV_MAJOR" == "7" ]]; then
-          sudo sed -i 's|^mirrorlist=|#&|; s|^#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|' /etc/yum.repos.d/CentOS-*
-      fi
-
-	  if [ "${TEST_REPO_ENABLE}" == 'true' ]; then
-	  cat > /etc/yum.repos.d/onlyoffice4testing.repo <<END
-[onlyoffice4testing]
-name=onlyoffice4testing repo
-baseurl=http://static.teamlab.info.s3.amazonaws.com/repo/4testing/centos/main/noarch/
-gpgcheck=1
-gpgkey=https://download.onlyoffice.com/GPG-KEY-ONLYOFFICE
-enabled=1
-END
-          yum -y install centos*-release
-	  fi
+          [[ "${TEST_REPO_ENABLE}" == 'true' ]] && add-repo-rpm
+          ;;
+      *)
+          echo "${COLOR_RED}Failed to determine Linux dist${COLOR_RESET}"; exit 1
+          ;;
+    esac
+  else
+      echo "${COLOR_RED}File /etc/os-release doesn't exist${COLOR_RESET}"; exit 1
   fi
 
   # Clean up home folder
   rm -rf /home/vagrant/*
-
-  if [ -d /tmp/workspace ]; then
-          mv /tmp/workspace/* /home/vagrant
-  fi
+  [ -d /tmp/docspace ] && mv /tmp/docspace/* /home/vagrant
 
   echo '127.0.0.1 host4test' | sudo tee -a /etc/hosts   
-  echo "${COLOR_GREEN}☑ PREPAVE_VM: Hostname was setting up${COLOR_RESET}"   
-
+  echo "${COLOR_GREEN}[OK] PREPARE_VM: Hostname was setting up${COLOR_RESET}"   
 }
+
 
 #############################################################################################
 # Install workspace and then healthcheck
