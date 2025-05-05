@@ -130,7 +130,7 @@ jobs:
 
   vagrant-up:
     name: "Test Workspace with ${{ matrix.name}}"
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-22.04
     needs: prepare
     strategy:
       fail-fast: false
