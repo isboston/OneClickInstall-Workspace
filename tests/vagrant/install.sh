@@ -171,13 +171,47 @@ function prepare_vm() {
       echo "${COLOR_GREEN}☑ PREPARE_VM: SHA1 GPG support enabled (RHEL9+)${COLOR_RESET}"
     fi
 
-    # Только если это CentOS — патчим зеркала
+    # CentOS fallback patch (только если действительно CentOS)
     if grep -qi centos /etc/redhat-release 2>/dev/null; then
       echo "${COLOR_YELLOW}☑ PREPARE_VM: CentOS detected, applying repo fallback patch${COLOR_RESET}"
       sed -i 's|^mirrorlist=|#&|; s|^#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|' /etc/yum.repos.d/CentOS-* || true
     fi
 
+    # Добавление onlyoffice test repo
     if [ "${TEST_REPO_ENABLE}" == 'true' ]; then
+
+      # CentOS Stream репозитории для RHEL 8/9
+      if [[ "$REV" == "8" ]]; then
+        cat <<EOF | sudo tee /etc/yum.repos.d/centos-stream-8.repo
+[centos8s-baseos]
+name=CentOS Stream 8 - BaseOS
+baseurl=http://mirror.stream.centos.org/8-stream/BaseOS/x86_64/os/
+enabled=1
+gpgcheck=0
+
+[centos8s-appstream]
+name=CentOS Stream 8 - AppStream
+baseurl=http://mirror.stream.centos.org/8-stream/AppStream/x86_64/os/
+enabled=1
+gpgcheck=0
+EOF
+      elif [[ "$REV" == "9" ]]; then
+        cat <<EOF | sudo tee /etc/yum.repos.d/centos-stream-9.repo
+[centos9s-baseos]
+name=CentOS Stream 9 - BaseOS
+baseurl=http://mirror.stream.centos.org/9-stream/BaseOS/x86_64/os/
+enabled=1
+gpgcheck=0
+
+[centos9s-appstream]
+name=CentOS Stream 9 - AppStream
+baseurl=http://mirror.stream.centos.org/9-stream/AppStream/x86_64/os/
+enabled=1
+gpgcheck=0
+EOF
+      fi
+
+      # Репозиторий ONLYOFFICE
       cat > /etc/yum.repos.d/onlyoffice4testing.repo <<EOF
 [onlyoffice4testing]
 name=onlyoffice4testing repo
@@ -186,6 +220,7 @@ gpgcheck=1
 gpgkey=https://download.onlyoffice.com/GPG-KEY-ONLYOFFICE
 enabled=1
 EOF
+
       yum install -y centos-release || true
     fi
   fi
