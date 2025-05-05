@@ -143,11 +143,11 @@ function prepare_vm() {
   DISTRIB_CODENAME=$(echo "$DISTRIB_CODENAME" | tr '[:upper:]' '[:lower:]' | xargs)
   REV=$(echo "$REV" | xargs)
 
-  if [ ! -f /etc/centos-release ]; then
+    if [ ! -f /etc/centos-release ]; then
 	if [ "${DIST}" = "debian" ]; then
-	    if [ "${DISTRIB_CODENAME}" == "bookworm" ]; then
-		    apt-get update -y
-		    apt install -y curl gnupg
+	     if [ "${DISTRIB_CODENAME}" == "bookworm" ]; then
+		     apt-get update -y
+		     apt install -y curl gnupg
         fi
         if systemctl is-active --quiet postfix; then
             systemctl stop postfix
@@ -158,10 +158,10 @@ function prepare_vm() {
     fi
 
 	if [ "${TEST_REPO_ENABLE}" == 'true' ]; then
-  	    mkdir -p -m 700 $HOME/.gnupg
-  	    echo "deb [signed-by=/usr/share/keyrings/onlyoffice.gpg] http://static.teamlab.info.s3.amazonaws.com/repo/4testing/debian stable main" | tee /etc/apt/sources.list.d/onlyoffice4testing.list
-  	    curl -fsSL https://download.onlyoffice.com/GPG-KEY-ONLYOFFICE | gpg --no-default-keyring --keyring gnupg-ring:/usr/share/keyrings/onlyoffice.gpg --import
-  	    chmod 644 /usr/share/keyrings/onlyoffice.gpg
+   	   mkdir -p -m 700 $HOME/.gnupg
+  	   echo "deb [signed-by=/usr/share/keyrings/onlyoffice.gpg] http://static.teamlab.info.s3.amazonaws.com/repo/4testing/debian stable main" | tee /etc/apt/sources.list.d/onlyoffice4testing.list
+  	   curl -fsSL https://download.onlyoffice.com/GPG-KEY-ONLYOFFICE | gpg --no-default-keyring --keyring gnupg-ring:/usr/share/keyrings/onlyoffice.gpg --import
+  	   chmod 644 /usr/share/keyrings/onlyoffice.gpg
 	fi
   fi
 
@@ -192,8 +192,8 @@ EOF
           sudo sed -i 's|^mirrorlist=|#&|; s|^#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|' /etc/yum.repos.d/CentOS-*
       fi
 
-      if [ "${TEST_REPO_ENABLE}" == 'true' ]; then
-        cat > /etc/yum.repos.d/onlyoffice4testing.repo <<END
+	  if [ "${TEST_REPO_ENABLE}" == 'true' ]; then
+	  cat > /etc/yum.repos.d/onlyoffice4testing.repo <<END
 [onlyoffice4testing]
 name=onlyoffice4testing repo
 baseurl=http://static.teamlab.info.s3.amazonaws.com/repo/4testing/centos/main/noarch/
@@ -201,19 +201,20 @@ gpgcheck=1
 gpgkey=https://download.onlyoffice.com/GPG-KEY-ONLYOFFICE
 enabled=1
 END
-        yum -y install centos*-release || true
-      fi
+          yum -y install centos*-release
+	  fi
   fi
 
   # Clean up home folder
   rm -rf /home/vagrant/*
 
   if [ -d /tmp/workspace ]; then
-      mv /tmp/workspace/* /home/vagrant
+          mv /tmp/workspace/* /home/vagrant
   fi
 
   echo '127.0.0.1 host4test' | sudo tee -a /etc/hosts   
-  echo "${COLOR_GREEN}☑ PREPARE_VM: Hostname was set${COLOR_RESET}"   
+  echo "${COLOR_GREEN}☑ PREPAVE_VM: Hostname was setting up${COLOR_RESET}"   
+
 }
 
 #############################################################################################
