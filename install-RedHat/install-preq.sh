@@ -60,6 +60,7 @@ if ! [[ "$REV" =~ ^[0-9]+$ ]]; then
 fi
 
 if [ "$DIST" = "redhat" ]; then 
+    EPEL_URL="https://dl.fedoraproject.org/pub/epel/"
 	LADSPA_PACKAGE_VERSION=$(curl -s "${EPEL_URL}/10/Everything/x86_64/Packages/l/" | grep -oP 'ladspa-[0-9].*?\.rpm' | sort -V | tail -n 1)
 	${package_manager} install -y "${EPEL_URL}/10/Everything/x86_64/Packages/l/${LADSPA_PACKAGE_VERSION}"
 fi
