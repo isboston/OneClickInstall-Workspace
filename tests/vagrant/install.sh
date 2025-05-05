@@ -144,6 +144,26 @@ function prepare_vm() {
   REV=`echo "$REV" | xargs`;
 
   if [ ! -f /etc/centos-release ]; then
+    # Проверка на RHEL (не CentOS)
+  if [ -f /etc/redhat-release ] && ! grep -qi centos /etc/redhat-release; then
+      RHEL_REV=$(sed -E 's/[^0-9]+([0-9]+).*/\1/' /etc/redhat-release)
+      if [ "${RHEL_REV}" == "9" ]; then
+          echo "${COLOR_GREEN}☑ PREPARE_VM: RHEL 9 detected. Adding CentOS Stream 9 repos${COLOR_RESET}"
+          cat <<EOF | sudo tee /etc/yum.repos.d/centos-stream-9.repo
+[centos9s-baseos]
+name=CentOS Stream 9 - BaseOS
+baseurl=http://mirror.stream.centos.org/9-stream/BaseOS/x86_64/os/
+enabled=1
+gpgcheck=0
+
+[centos9s-appstream]
+name=CentOS Stream 9 - AppStream
+baseurl=http://mirror.stream.centos.org/9-stream/AppStream/x86_64/os/
+enabled=1
+gpgcheck=0
+EOF
+      fi
+  fi
 	if [ "${DIST}" = "debian" ]; then
 	     if [ "${DISTRIB_CODENAME}" == "bookworm" ]; then
 		     apt-get update -y
@@ -167,8 +187,8 @@ function prepare_vm() {
   fi
 
   if [ -f /etc/centos-release ]; then
-	  local REV=$(cat /etc/redhat-release | sed 's/[^0-9.]*//g')
-	  if [[ "${REV}" =~ ^9 ]]; then
+	  CENTOS_REV=$(cat /etc/redhat-release | sed 's/[^0-9.]*//g')
+	  if [[ "${CENTOS_REV}" =~ ^9 ]]; then
 		  update-crypto-policies --set LEGACY
 		  echo "${COLOR_GREEN}☑ PREPAVE_VM: sha1 gpg key chek enabled${COLOR_RESET}"
 	  else
