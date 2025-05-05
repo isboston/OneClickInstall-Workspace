@@ -99,37 +99,37 @@ jobs:
               "distr": "onlyoffice"
               },
               {
-              "execute": '${{ github.event.inputs.debian10 || true }}',
+              "execute": '${{ github.event.inputs.debian10 || false }}',
               "name": "Debian10",
               "os":"base-debian10",
               "distr": "onlyoffice"
               },
               {
-              "execute": '${{ github.event.inputs.debian11 || true }}',
+              "execute": '${{ github.event.inputs.debian11 || false }}',
               "name": "Debian11",
               "os": "base-debian11",
               "distr": "onlyoffice"
               },
               {
-              "execute": '${{ github.event.inputs.debian12 || true }}',
+              "execute": '${{ github.event.inputs.debian12 || false }}',
               "name": "Debian12",
               "os": "base-debian12",
               "distr": "onlyoffice"
               },
               {
-              "execute": '${{ github.event.inputs.ubuntu2004 || true }}',
+              "execute": '${{ github.event.inputs.ubuntu2004 || false }}',
               "name": "Ubuntu20.04",
               "os": "base-ubuntu2004",
               "distr": "onlyoffice"
               },
               {
-              "execute": '${{ github.event.inputs.ubuntu2204 || true }}',
+              "execute": '${{ github.event.inputs.ubuntu2204 || false }}',
               "name": "Ubuntu22.04",
               "os": "base-ubuntu2204",
               "distr": "onlyoffice"
               },
               {
-              "execute": '${{ github.event.inputs.ubuntu2404 || true }}',
+              "execute": '${{ github.event.inputs.ubuntu2404 || false }}',
               "name": "Ubuntu24.04",
               "os": "base-ubuntu2404",
               "distr": "onlyoffice"
