@@ -169,8 +169,12 @@ function prepare_vm() {
     if [[ "$REV" == "9" ]]; then
       update-crypto-policies --set LEGACY
       echo "${COLOR_GREEN}☑ PREPARE_VM: SHA1 GPG support enabled (RHEL9+)${COLOR_RESET}"
-    else
-      sed -i 's|^mirrorlist=|#&|; s|^#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|' /etc/yum.repos.d/CentOS-*
+    fi
+
+    # Только если это CentOS — патчим зеркала
+    if grep -qi centos /etc/redhat-release 2>/dev/null; then
+      echo "${COLOR_YELLOW}☑ PREPARE_VM: CentOS detected, applying repo fallback patch${COLOR_RESET}"
+      sed -i 's|^mirrorlist=|#&|; s|^#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|' /etc/yum.repos.d/CentOS-* || true
     fi
 
     if [ "${TEST_REPO_ENABLE}" == 'true' ]; then
