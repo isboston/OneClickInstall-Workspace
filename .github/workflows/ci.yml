@@ -17,6 +17,10 @@ on:
 
   workflow_dispatch:
     inputs:
+      rhel9:
+        type: boolean
+        description: 'RHEL 9'
+        default: true
       centos8s:
         type: boolean
         description: 'CentOS 8 Stream'
@@ -66,6 +70,12 @@ jobs:
         run: |
           matrix=$(echo '{
             "include": [
+              {
+              "execute": '${{ github.event.inputs.rhel9 || true }}',
+              "name": "RHEL 9",
+              "os": "rhel9",
+              "distr": "generic"
+              },
               {
               "execute": '${{ github.event.inputs.centos8s || true }}',
               "name": "CentOS8S",
@@ -138,10 +148,12 @@ jobs:
       - name: Get update and install vagrant
         run: |
           set -eux
+          wget -q https://www.virtualbox.org/download/oracle_vbox_2016.asc -O- | sudo gpg --dearmor -o /usr/share/keyrings/virtualbox.gpg
+          echo "deb [arch=amd64 signed-by=/usr/share/keyrings/virtualbox.gpg] https://download.virtualbox.org/virtualbox/debian $(. /etc/os-release && echo $UBUNTU_CODENAME) contrib" | sudo tee /etc/apt/sources.list.d/virtualbox.list
           sudo wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
           sudo echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
           sudo apt update -y
-          sudo apt install vagrant virtualbox -y
+          sudo apt install vagrant virtualbox-7.0 -y
 
       - name: Install from production scripts
         if: ${{ github.event_name == 'schedule' }}
