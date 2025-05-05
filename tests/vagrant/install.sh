@@ -123,81 +123,85 @@ function check_hw() {
 #   ☑ PREPAVE_VM: **<prepare_message>**
 #############################################################################################
 function prepare_vm() {
+    # Load distribution info
+    if [[ -r /etc/os-release ]]; then
+        . /etc/os-release
+        DIST=${ID,,}
+        REV=${VERSION_ID}
+        CODENAME=${VERSION_CODENAME,,}
+    elif command -v lsb_release &>/dev/null; then
+        DIST=$(lsb_release -si | tr '[:upper:]' '[:lower:]')
+        REV=$(lsb_release -sr)
+        CODENAME=$(lsb_release -sc)
+    else
+        echo "${COLOR_RED}Unsupported distribution${COLOR_RESET}" >&2
+        return 1
+    fi
 
-  if [ -f /etc/lsb-release ] ; then
-        DIST=`cat /etc/lsb-release | grep '^DISTRIB_ID' | awk -F=  '{ print $2 }'`
-        REV=`cat /etc/lsb-release | grep '^DISTRIB_RELEASE' | awk -F=  '{ print $2 }'`
-        DISTRIB_CODENAME=`cat /etc/lsb-release | grep '^DISTRIB_CODENAME' | awk -F=  '{ print $2 }'`
-        DISTRIB_RELEASE=`cat /etc/lsb-release | grep '^DISTRIB_RELEASE' | awk -F=  '{ print $2 }'`
-  elif [ -f /etc/lsb_release ] || [ -f /usr/bin/lsb_release ] ; then
-        DIST=`lsb_release -a 2>&1 | grep 'Distributor ID:' | awk -F ":" '{print $2 }'`
-        REV=`lsb_release -a 2>&1 | grep 'Release:' | awk -F ":" '{print $2 }'`
-        DISTRIB_CODENAME=`lsb_release -a 2>&1 | grep 'Codename:' | awk -F ":" '{print $2 }'`
-        DISTRIB_RELEASE=`lsb_release -a 2>&1 | grep 'Release:' | awk -F ":" '{print $2 }'`
-  elif [ -f /etc/os-release ] ; then
-        DISTRIB_CODENAME=$(grep "VERSION=" /etc/os-release |awk -F= {' print $2'}|sed s/\"//g |sed s/[0-9]//g | sed s/\)$//g |sed s/\(//g | tr -d '[:space:]')
-        DISTRIB_RELEASE=$(grep "VERSION_ID=" /etc/os-release |awk -F= {' print $2'}|sed s/\"//g |sed s/[0-9]//g | sed s/\)$//g |sed s/\(//g | tr -d '[:space:]')
-  fi
-
-  DIST=`echo "$DIST" | tr '[:upper:]' '[:lower:]' | xargs`;
-  DISTRIB_CODENAME=`echo "$DISTRIB_CODENAME" | tr '[:upper:]' '[:lower:]' | xargs`;
-  REV=`echo "$REV" | xargs`;
-
-  if [ ! -f /etc/centos-release ]; then
-	if [ "${DIST}" = "debian" ]; then
-	     if [ "${DISTRIB_CODENAME}" == "bookworm" ]; then
-		     apt-get update -y
-		     apt install -y curl gnupg
-             fi
-	     # Remove postfix if installed
-             if systemctl is-active --quiet postfix; then
-                     systemctl stop postfix
-	             systemctl disable postfix
-	             apt-get remove postfix -y
-                     echo "${COLOR_GREEN}☑ PREPAVE_VM: Postfix was removed${COLOR_RESET}"
-	     fi
+    # Debian/Ubuntu handling
+    if [[ "$DIST" =~ ^(debian|ubuntu)$ ]]; then
+        # Bookworm-specific prerequisites
+        if [[ "$CODENAME" == "bookworm" ]]; then
+            apt-get update -y
+            apt-get install -y curl gnupg
         fi
 
-	if [ "${TEST_REPO_ENABLE}" == 'true' ]; then
-   	   mkdir -p -m 700 $HOME/.gnupg
-  	   echo "deb [signed-by=/usr/share/keyrings/onlyoffice.gpg] http://static.teamlab.info.s3.amazonaws.com/repo/4testing/debian stable main" | tee /etc/apt/sources.list.d/onlyoffice4testing.list
-  	   curl -fsSL https://download.onlyoffice.com/GPG-KEY-ONLYOFFICE | gpg --no-default-keyring --keyring gnupg-ring:/usr/share/keyrings/onlyoffice.gpg --import
-  	   chmod 644 /usr/share/keyrings/onlyoffice.gpg
-	fi
-  fi
+        # Remove postfix if running
+        if systemctl is-active --quiet postfix; then
+            systemctl stop postfix && systemctl disable postfix
+            apt-get purge -y postfix
+            echo "${COLOR_GREEN}☑ PREPARE_VM: Removed postfix${COLOR_RESET}"
+        fi
 
-  if [ -f /etc/centos-release ]; then
-	  local REV=$(cat /etc/redhat-release | sed 's/[^0-9.]*//g')
-	  if [[ "${REV}" =~ ^9 ]]; then
-		  update-crypto-policies --set LEGACY
-		  echo "${COLOR_GREEN}☑ PREPAVE_VM: sha1 gpg key chek enabled${COLOR_RESET}"
-	  else
-		  sudo sed -i 's|^mirrorlist=|#&|; s|^#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|' /etc/yum.repos.d/CentOS-*
-	  fi
+        # Add test repository if enabled
+        if [[ "$TEST_REPO_ENABLE" == "true" ]]; then
+            install_gpg_key \
+                "https://download.onlyoffice.com/GPG-KEY-ONLYOFFICE" \
+                "/usr/share/keyrings/onlyoffice.gpg"
+            echo "deb [signed-by=/usr/share/keyrings/onlyoffice.gpg] \
+                http://static.teamlab.info.s3.amazonaws.com/repo/4testing/debian \
+                stable main" > /etc/apt/sources.list.d/onlyoffice4testing.list
+        fi
 
-	  if [ "${TEST_REPO_ENABLE}" == 'true' ]; then
-	  cat > /etc/yum.repos.d/onlyoffice4testing.repo <<END
+    # CentOS/RHEL handling
+    elif [[ -f /etc/centos-release ]]; then
+        local MAJOR=${REV%%.*}
+        if (( MAJOR >= 9 )); then
+            update-crypto-policies --set LEGACY
+            echo "${COLOR_GREEN}☑ PREPARE_VM: Enabled legacy crypto policies${COLOR_RESET}"
+        else
+            sed -i \
+                -e 's|^mirrorlist=|#mirrorlist=|' \
+                -e 's|^#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|' \
+                /etc/yum.repos.d/CentOS-*
+        fi
+
+        if [[ "$TEST_REPO_ENABLE" == "true" ]]; then
+            cat > /etc/yum.repos.d/onlyoffice4testing.repo <<-EOF
 [onlyoffice4testing]
-name=onlyoffice4testing repo
+name=ONLYOFFICE 4testing repository
 baseurl=http://static.teamlab.info.s3.amazonaws.com/repo/4testing/centos/main/noarch/
 gpgcheck=1
 gpgkey=https://download.onlyoffice.com/GPG-KEY-ONLYOFFICE
 enabled=1
-END
-          yum -y install centos*-release
-	  fi
-  fi
+EOF
+            yum install -y centos-release
+        fi
+    fi
 
-  # Clean up home folder
-  rm -rf /home/vagrant/*
+    # Common cleanup and setup
+    rm -rf /home/vagrant/*
+    [[ -d /tmp/workspace ]] && mv /tmp/workspace/* /home/vagrant/
+    echo '127.0.0.1 host4test' | tee -a /etc/hosts
+    echo "${COLOR_GREEN}☑ PREPARE_VM: Host entry added${COLOR_RESET}"
+}
 
-  if [ -d /tmp/workspace ]; then
-          mv /tmp/workspace/* /home/vagrant
-  fi
-
-  echo '127.0.0.1 host4test' | sudo tee -a /etc/hosts   
-  echo "${COLOR_GREEN}☑ PREPAVE_VM: Hostname was setting up${COLOR_RESET}"   
-
+# Helper: Import GPG key safely
+function install_gpg_key() {
+    local url="$1"; local keyring="$2"
+    mkdir -p "$(dirname "$keyring")" && chmod 700 "$(dirname "$keyring")"
+    curl -fsSL "$url" | gpg --dearmor > "$keyring"
+    chmod 644 "$keyring"
 }
 
 #############################################################################################
