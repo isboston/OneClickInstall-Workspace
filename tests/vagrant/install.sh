@@ -185,13 +185,13 @@ function prepare_vm() {
         cat <<EOF | sudo tee /etc/yum.repos.d/centos-stream-8.repo
 [centos8s-baseos]
 name=CentOS Stream 8 - BaseOS
-baseurl=http://mirror.stream.centos.org/8-stream/BaseOS/x86_64/os/
+baseurl=http://composes.stream.centos.org/production/latest-CentOS-Stream/compose/BaseOS/x86_64/os/
 enabled=1
 gpgcheck=0
 
 [centos8s-appstream]
 name=CentOS Stream 8 - AppStream
-baseurl=http://mirror.stream.centos.org/8-stream/AppStream/x86_64/os/
+baseurl=http://composes.stream.centos.org/production/latest-CentOS-Stream/compose/AppStream/x86_64/os/
 enabled=1
 gpgcheck=0
 EOF
