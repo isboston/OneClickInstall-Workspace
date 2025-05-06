@@ -123,7 +123,6 @@ function check_hw() {
 #   ☑ PREPAVE_VM: **<prepare_message>**
 #############################################################################################
 function prepare_vm() {
-  # Определение дистрибутива
   if [ -f /etc/os-release ]; then
     . /etc/os-release
     DIST_ID=$(echo "$ID" | tr '[:upper:]' '[:lower:]')
@@ -134,14 +133,12 @@ function prepare_vm() {
 
   echo "${COLOR_YELLOW}☑ PREPARE_VM: Detected OS: $DIST_ID, Codename: $DIST_CODENAME, Version: $DIST_VER_ID${COLOR_RESET}"
 
-  ############ Debian/Ubuntu логика ############
   if [[ "$DIST_ID" == "debian" || "$DIST_ID" == "ubuntu" ]]; then
     if [[ "$DIST_CODENAME" == "bookworm" || "$DIST_CODENAME" == "jammy" ]]; then
       apt-get update -y
       apt-get install -y curl gnupg
     fi
 
-    # Удаление postfix
     if systemctl is-active --quiet postfix; then
       systemctl stop postfix
       systemctl disable postfix
@@ -149,52 +146,30 @@ function prepare_vm() {
       echo "${COLOR_GREEN}☑ PREPARE_VM: Postfix was removed${COLOR_RESET}"
     fi
 
-    # Добавление тестового репо
     if [ "${TEST_REPO_ENABLE}" == 'true' ]; then
       mkdir -p -m 700 /etc/apt/sources.list.d
       mkdir -p -m 700 $HOME/.gnupg
-      echo "deb [signed-by=/usr/share/keyrings/onlyoffice.gpg] http://static.teamlab.info.s3.amazonaws.com/repo/4testing/debian stable main" \
-        | tee /etc/apt/sources.list.d/onlyoffice4testing.list
-      curl -fsSL https://download.onlyoffice.com/GPG-KEY-ONLYOFFICE \
-        | gpg --no-default-keyring --keyring gnupg-ring:/usr/share/keyrings/onlyoffice.gpg --import
+      echo "deb [signed-by=/usr/share/keyrings/onlyoffice.gpg] http://static.teamlab.info.s3.amazonaws.com/repo/4testing/debian stable main" | tee /etc/apt/sources.list.d/onlyoffice4testing.list
+      curl -fsSL https://download.onlyoffice.com/GPG-KEY-ONLYOFFICE | gpg --no-default-keyring --keyring gnupg-ring:/usr/share/keyrings/onlyoffice.gpg --import
       chmod 644 /usr/share/keyrings/onlyoffice.gpg
     fi
   fi
 
-  ############ RHEL/CentOS логика ############
   if [[ "$DIST_ID" == "rhel" || "$DIST_ID" == "centos" ]]; then
     local REV=${DIST_VER_ID%%.*}
 
-    # Поддержка GPG ключей SHA1 на RHEL9+
     if [[ "$REV" == "9" ]]; then
       update-crypto-policies --set LEGACY
       echo "${COLOR_GREEN}☑ PREPARE_VM: SHA1 GPG support enabled (RHEL9+)${COLOR_RESET}"
     fi
 
-    # CentOS fallback patch (только если действительно CentOS)
     if grep -qi centos /etc/redhat-release 2>/dev/null; then
       echo "${COLOR_YELLOW}☑ PREPARE_VM: CentOS detected, applying repo fallback patch${COLOR_RESET}"
       sed -i 's|^mirrorlist=|#&|; s|^#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|' /etc/yum.repos.d/CentOS-* || true
     fi
 
-    # Добавление onlyoffice test repo
     if [ "${TEST_REPO_ENABLE}" == 'true' ]; then
-
-      # CentOS Stream репозитории для RHEL 8/9
-      if [[ "$REV" == "8" ]]; then
-        cat <<EOF | sudo tee /etc/yum.repos.d/centos-stream-8.repo
-[BaseOS]
-name=CentOS-8 - Base
-baseurl=http://vault.centos.org/8.5.2111/BaseOS/x86_64/os/
-gpgcheck=0
-enabled=1
-[AppStream]
-name=CentOS-8 - AppStream
-baseurl=http://vault.centos.org/8.5.2111/AppStream/x86_64/os/
-gpgcheck=0
-enabled=1
-EOF
-      elif [[ "$REV" == "9" ]]; then
+      if [[ "$REV" == "9" ]]; then
         update-crypto-policies --set LEGACY
         cat <<EOF | sudo tee /etc/yum.repos.d/centos-stream-9.repo
 [centos9s-baseos]
@@ -211,7 +186,6 @@ gpgcheck=0
 EOF
       fi
 
-      # Репозиторий ONLYOFFICE
       cat > /etc/yum.repos.d/onlyoffice4testing.repo <<EOF
 [onlyoffice4testing]
 name=onlyoffice4testing repo
@@ -233,6 +207,7 @@ EOF
 
   echo '127.0.0.1 host4test' | tee -a /etc/hosts
   echo "${COLOR_GREEN}☑ PREPARE_VM: Hostname and workspace set up${COLOR_RESET}"
+
 }
 
 
