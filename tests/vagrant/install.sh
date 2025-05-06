@@ -195,21 +195,20 @@ gpgkey=https://download.onlyoffice.com/GPG-KEY-ONLYOFFICE
 enabled=1
 EOF
 
-      yum install -y centos-release || true
-    fi
+          yum -y install centos*-release
+	  fi
   fi
 
-  ############ Общие действия ############
   rm -rf /home/vagrant/*
+
   if [ -d /tmp/workspace ]; then
-    mv /tmp/workspace/* /home/vagrant
+          mv /tmp/workspace/* /home/vagrant
   fi
 
-  echo '127.0.0.1 host4test' | tee -a /etc/hosts
-  echo "${COLOR_GREEN}☑ PREPARE_VM: Hostname and workspace set up${COLOR_RESET}"
+  echo '127.0.0.1 host4test' | sudo tee -a /etc/hosts   
+  echo "${COLOR_GREEN}☑ PREPAVE_VM: Hostname was setting up${COLOR_RESET}"   
 
 }
-
 
 #############################################################################################
 # Install workspace and then healthcheck
