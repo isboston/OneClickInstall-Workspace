@@ -185,7 +185,7 @@ jobs:
         with:
           max_attempts: 2
           timeout_minutes: 180
-          retry_on: error
+          # retry_on: error
           command: |
                 cd tests/vagrant
                 TEST_CASE='--local-install' \
