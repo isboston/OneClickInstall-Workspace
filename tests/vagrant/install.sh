@@ -186,7 +186,7 @@ gpgcheck=0
 END
       fi
 
-      cat > /etc/yum.repos.d/onlyoffice4testing.repo <<END
+	  cat > /etc/yum.repos.d/onlyoffice4testing.repo <<END
 [onlyoffice4testing]
 name=onlyoffice4testing repo
 baseurl=http://static.teamlab.info.s3.amazonaws.com/repo/4testing/centos/main/noarch/
