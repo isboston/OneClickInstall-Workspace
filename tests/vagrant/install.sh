@@ -194,12 +194,11 @@ gpgcheck=1
 gpgkey=https://download.onlyoffice.com/GPG-KEY-ONLYOFFICE
 enabled=1
 END
-
           yum -y install centos*-release
 	  fi
   fi
 
- # Clean up home folder
+  # Clean up home folder
   rm -rf /home/vagrant/*
 
   if [ -d /tmp/workspace ]; then
