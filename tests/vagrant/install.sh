@@ -131,8 +131,6 @@ function prepare_vm() {
     DIST_CODENAME=$(echo "$VERSION" | awk '{print tolower($NF)}' | tr -d '()')
   fi
 
-  echo "${COLOR_YELLOW}☑ PREPARE_VM: Detected OS: $DIST_ID, Codename: $DIST_CODENAME, Version: $DIST_VER_ID${COLOR_RESET}"
-
   if [[ "$DIST_ID" == "debian" || "$DIST_ID" == "ubuntu" ]]; then
     if [[ "$DIST_CODENAME" == "bookworm" || "$DIST_CODENAME" == "jammy" ]]; then
       apt-get update -y
@@ -155,21 +153,13 @@ function prepare_vm() {
     fi
   fi
 
-  if [[ "$DIST_ID" == "rhel" || "$DIST_ID" == "centos" ]]; then
+  if grep -Eqi 'centos|red hat' /etc/redhat-release; then
     local REV=${DIST_VER_ID%%.*}
 
-    if [[ "$REV" == "9" ]]; then
-      update-crypto-policies --set LEGACY
-      echo "${COLOR_GREEN}☑ PREPARE_VM: SHA1 GPG support enabled (RHEL9+)${COLOR_RESET}"
-    fi
-
     if grep -qi centos /etc/redhat-release 2>/dev/null; then
-      echo "${COLOR_YELLOW}☑ PREPARE_VM: CentOS detected, applying repo fallback patch${COLOR_RESET}"
       sed -i 's|^mirrorlist=|#&|; s|^#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|' /etc/yum.repos.d/CentOS-* || true
     fi
-
-    if [ "${TEST_REPO_ENABLE}" == 'true' ]; then
-      if [[ "$REV" == "9" ]]; then
+    if [[ "$REV" == "9" ]]; then
         update-crypto-policies --set LEGACY
         cat <<END | sudo tee /etc/yum.repos.d/centos-stream-9.repo
 [centos9s-baseos]
@@ -184,8 +174,8 @@ baseurl=http://mirror.stream.centos.org/9-stream/AppStream/x86_64/os/
 enabled=1
 gpgcheck=0
 END
-      fi
-
+    fi
+	  if [ "${TEST_REPO_ENABLE}" == 'true' ]; then
 	  cat > /etc/yum.repos.d/onlyoffice4testing.repo <<END
 [onlyoffice4testing]
 name=onlyoffice4testing repo
