@@ -171,7 +171,7 @@ function prepare_vm() {
     if [ "${TEST_REPO_ENABLE}" == 'true' ]; then
       if [[ "$REV" == "9" ]]; then
         update-crypto-policies --set LEGACY
-        cat <<EOF | sudo tee /etc/yum.repos.d/centos-stream-9.repo
+        cat <<END | sudo tee /etc/yum.repos.d/centos-stream-9.repo
 [centos9s-baseos]
 name=CentOS Stream 9 - BaseOS
 baseurl=http://mirror.stream.centos.org/9-stream/BaseOS/x86_64/os/
@@ -183,22 +183,23 @@ name=CentOS Stream 9 - AppStream
 baseurl=http://mirror.stream.centos.org/9-stream/AppStream/x86_64/os/
 enabled=1
 gpgcheck=0
-EOF
+END
       fi
 
-      cat > /etc/yum.repos.d/onlyoffice4testing.repo <<EOF
+      cat > /etc/yum.repos.d/onlyoffice4testing.repo <<END
 [onlyoffice4testing]
 name=onlyoffice4testing repo
 baseurl=http://static.teamlab.info.s3.amazonaws.com/repo/4testing/centos/main/noarch/
 gpgcheck=1
 gpgkey=https://download.onlyoffice.com/GPG-KEY-ONLYOFFICE
 enabled=1
-EOF
+END
 
           yum -y install centos*-release
 	  fi
   fi
 
+ # Clean up home folder
   rm -rf /home/vagrant/*
 
   if [ -d /tmp/workspace ]; then
