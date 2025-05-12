@@ -11,7 +11,7 @@ on:
 
   schedule:
     - cron: '00 21 * * 6'  # At 21:00 on Saturday.
-
+ 
   workflow_dispatch:
     inputs:
       centos7:
@@ -72,7 +72,7 @@ jobs:
           matrix=$(echo '{
             "include": [
               {
-              {"execute": '${{ github.event.inputs.centos8s || true }}', "name": "CentOS8S", "os": "base-centos8s", "distr": "onlyoffice"},
+              {"execute": '${{ github.event.inputs.centos8s || true }}', "name": "CentOS10S", "os": "base-centos8s", "distr": "onlyoffice"},
               {"execute": '${{ github.event.inputs.centos9s || true }}', "name": "CentOS9S", "os": "base-centos9s", "distr": "onlyoffice"},
               {"execute": '${{ github.event.inputs.debian10 || true }}', "name": "Debian10", "os": "base-debian10", "distr": "onlyoffice"},
               {"execute": '${{ github.event.inputs.debian11 || true }}', "name": "Debian11", "os": "base-debian11", "distr": "onlyoffice"},
