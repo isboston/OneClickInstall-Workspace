@@ -8,7 +8,7 @@ on:
       - '.github/**'
       - 'tests/**'
       - '**/README.md'
- 
+
   schedule:
     - cron: '00 21 * * 6'  # At 21:00 on Saturday.
 
