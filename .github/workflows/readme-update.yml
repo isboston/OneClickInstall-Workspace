@@ -6,6 +6,7 @@ on:
     #   - '.github/workflows/ci.yml'
     branches:
       - feature/rhel
+  workflow_dispatch:
 
 permissions:
   contents: write
