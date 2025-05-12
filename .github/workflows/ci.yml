@@ -8,9 +8,6 @@ on:
       - '.github/**'
       - 'tests/**'
       - '**/README.md'
-  push:
-    branches:
-      - feature/rhel
 
   schedule:
     - cron: '00 21 * * 6'  # At 21:00 on Saturday.
