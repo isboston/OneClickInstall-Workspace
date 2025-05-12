@@ -30,7 +30,7 @@ It has two editions - [Community, Enterprise](#onlyoffice-docs-editions).
 
 The installation scripts support the following operating systems, which are **regularly tested** as part of our CI/CD pipelines:
 <!-- OS-SUPPORT-LIST-START -->
-- CentOS8S
+- CentOS10S
 - CentOS9S
 - Debian10
 - Debian11
