@@ -11,7 +11,7 @@ on:
 
   schedule:
     - cron: '00 21 * * 6'  # At 21:00 on Saturday.
-
+     
   workflow_dispatch:
     inputs:
       rhel9:
