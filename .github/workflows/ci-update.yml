@@ -1,6 +1,6 @@
 name: OneClickTests-Update
   
-on:
+on: 
   workflow_dispatch:
     inputs:
       centos8s:
